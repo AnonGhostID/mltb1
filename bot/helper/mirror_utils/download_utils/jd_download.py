@@ -13,7 +13,7 @@ from bot import (
     jd_lock,
     jd_downloads,
 )
-from bot.helper.ext_utils.bot_utils import new_thread, retry_function, sync_to_async
+from bot.helper.ext_utils.bot_utils import new_thread, retry_function
 from bot.helper.ext_utils.jdownloader_booter import jdownloader
 from bot.helper.ext_utils.task_manager import (
     check_running_tasks,
@@ -39,24 +39,23 @@ async def configureDownload(_, query, obj):
         obj.event.set()
     elif data[1] == "cancel":
         await editMessage(message, "Task has been cancelled.")
-        obj.is_cancelled = True
+        obj.listener.isCancelled = True
         obj.event.set()
 
 
 class JDownloaderHelper:
     def __init__(self, listener):
-        self._listener = listener
         self._timeout = 300
         self._reply_to = ""
+        self.listener = listener
         self.event = Event()
-        self.is_cancelled = False
 
     @new_thread
     async def _event_handler(self):
         pfunc = partial(configureDownload, obj=self)
-        handler = self._listener.client.add_handler(
+        handler = self.listener.client.add_handler(
             CallbackQueryHandler(
-                pfunc, filters=regex("^jdq") & user(self._listener.userId)
+                pfunc, filters=regex("^jdq") & user(self.listener.userId)
             ),
             group=-1,
         )
@@ -64,10 +63,10 @@ class JDownloaderHelper:
             await wait_for(self.event.wait(), timeout=self._timeout)
         except:
             await editMessage(self._reply_to, "Timed Out. Task has been cancelled!")
-            self.is_cancelled = True
+            self.listener.isCancelled = True
             self.event.set()
         finally:
-            self._listener.client.remove_handler(*handler)
+            self.listener.client.remove_handler(*handler)
 
     async def waitForConfigurations(self):
         future = self._event_handler()
@@ -76,12 +75,12 @@ class JDownloaderHelper:
         buttons.ibutton("Done Selecting", "jdq sdone")
         buttons.ibutton("Cancel", "jdq cancel")
         button = buttons.build_menu(2)
-        msg = f"Disable/Remove the unwanted files or change variants or edit files names from myJdownloader site for <b>{self._listener.name}</b> but don't start it manually!\n\nAfter finish press Done Selecting!\nTimeout: 300s"
-        self._reply_to = await sendMessage(self._listener.message, msg, button)
+        msg = f"Disable/Remove the unwanted files or change variants or edit files names from myJdownloader site for <b>{self.listener.name}</b> but don't start it manually!\n\nAfter finish press Done Selecting!\nTimeout: 300s"
+        self._reply_to = await sendMessage(self.listener.message, msg, button)
         await wrap_future(future)
-        if not self.is_cancelled:
+        if not self.listener.isCancelled:
             await deleteMessage(self._reply_to)
-        return self.is_cancelled
+        return self.listener.isCancelled
 
 
 async def add_jd_download(listener, path):
@@ -93,11 +92,11 @@ async def add_jd_download(listener, path):
         try:
             await wait_for(retry_function(jdownloader.device.jd.version), timeout=5)
         except:
-            is_connected = await sync_to_async(jdownloader.jdconnect)
+            is_connected = await jdownloader.jdconnect()
             if not is_connected:
                 await listener.onDownloadError(jdownloader.error)
                 return
-            await sync_to_async(jdownloader.connectToDevice)
+            await jdownloader.connectToDevice()
 
         if not jd_downloads:
             await retry_function(jdownloader.device.linkgrabber.clear_list)
@@ -107,6 +106,17 @@ async def add_jd_download(listener, path):
                 odl_list = [od["uuid"] for od in odl]
                 await retry_function(
                     jdownloader.device.downloads.remove_links,
+                    package_ids=odl_list,
+                )
+        elif odl := await retry_function(
+            jdownloader.device.linkgrabber.query_packages, [{}]
+        ):
+            odl_list = [
+                od["uuid"] for od in odl if od["saveTo"].startswith("/root/Downloads/")
+            ]
+            if odl_list:
+                await retry_function(
+                    jdownloader.device.linkgrabber.remove_links,
                     package_ids=odl_list,
                 )
 
@@ -257,9 +267,8 @@ async def add_jd_download(listener, path):
             if listener.multi <= 1:
                 await sendStatusMessage(listener.message)
             await event.wait()
-            async with task_dict_lock:
-                if listener.mid not in task_dict:
-                    return
+            if listener.isCancelled:
+                return
     else:
         add_to_queue = False
 

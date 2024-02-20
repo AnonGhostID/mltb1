@@ -11,33 +11,21 @@ class SplitStatus:
     def gid(self):
         return self._gid
 
-    def progress(self):
-        return "0"
-
-    def speed(self):
-        return "0"
-
     def name(self):
         return self.listener.name
 
     def size(self):
         return get_readable_file_size(self._size)
 
-    def eta(self):
-        return "0s"
-
-    def status(self):
+    async def status(self):
         return MirrorStatus.STATUS_SPLITTING
-
-    def processed_bytes(self):
-        return 0
 
     def task(self):
         return self
 
     async def cancel_task(self):
         LOGGER.info(f"Cancelling Split: {self.listener.name}")
-        self.listener.cancelled = True
+        self.listener.isCancelled = True
         async with subprocess_lock:
             if (
                 self.listener.suproc is not None

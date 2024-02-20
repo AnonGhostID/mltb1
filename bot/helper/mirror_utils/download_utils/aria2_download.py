@@ -86,12 +86,12 @@ async def add_aria2c_download(listener, dpath, header, ratio, seed_time):
 
     if add_to_queue:
         await event.wait()
-
+        if listener.isCancelled:
+            return
         async with task_dict_lock:
-            if listener.mid not in task_dict:
-                return
             task = task_dict[listener.mid]
             task.queued = False
+            await sync_to_async(task.update)
             new_gid = task.gid()
 
         await sync_to_async(aria2.client.unpause, new_gid)

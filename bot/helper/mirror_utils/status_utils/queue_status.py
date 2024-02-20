@@ -18,7 +18,7 @@ class QueueStatus:
     def size(self):
         return get_readable_file_size(self._size)
 
-    def status(self):
+    async def status(self):
         if self._status == "dl":
             return MirrorStatus.STATUS_QUEUEDL
         return MirrorStatus.STATUS_QUEUEUP
@@ -39,6 +39,7 @@ class QueueStatus:
         return self
 
     async def cancel_task(self):
+        self.listener.isCancelled = True
         LOGGER.info(f"Cancelling Queue{self._status}: {self.listener.name}")
         if self._status == "dl":
             await self.listener.onDownloadError(
