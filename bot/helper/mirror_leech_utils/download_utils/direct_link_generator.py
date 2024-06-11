@@ -378,7 +378,8 @@ def streamtape(url):
             html = HTML(session.get(url).text)
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    if not (script := html.xpath("//script[contains(text(),'ideoooolink')]/text()")):
+    script = html.xpath("//script[contains(text(),'ideoooolink')]/text()") or html.xpath("//script[contains(text(),'ideoolink')]/text()")
+    if not script:
         raise DirectDownloadLinkException("ERROR: requeries script not found")
     if not (link := findall(r"(&expires\S+)'", script[0])):
         raise DirectDownloadLinkException("ERROR: Download link not found")
@@ -1445,13 +1446,13 @@ def filelions_and_streamwish(url):
         if quality == version["name"]:
             return version["url"]
         elif version["name"] == "l":
-            error += f"\nLow"
+            error += "\nLow"
         elif version["name"] == "n":
-            error += f"\nNormal"
+            error += "\nNormal"
         elif version["name"] == "o":
-            error += f"\nOriginal"
+            error += "\nOriginal"
         elif version["name"] == "h":
-            error += f"\nHD"
+            error += "\nHD"
         error += f" <code>{url}_{version['name']}</code>"
     raise DirectDownloadLinkException(f"ERROR: {error}")
 

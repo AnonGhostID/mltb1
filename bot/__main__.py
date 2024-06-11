@@ -25,7 +25,7 @@ from bot import (
     DATABASE_URL,
     INCOMPLETE_TASK_NOTIFIER,
     scheduler,
-    get_sabnzb_client,
+    sabnzbd_client,
 )
 from .helper.ext_utils.bot_utils import cmd_exec, sync_to_async, create_help_buttons
 from .helper.ext_utils.db_handler import DbManager
@@ -121,15 +121,18 @@ async def restart(_, message):
         qb.cancel()
     if jd := Intervals["jd"]:
         jd.cancel()
+    if nzb := Intervals["nzb"]:
+        nzb.cancel()
     if st := Intervals["status"]:
         for intvl in list(st.values()):
             intvl.cancel()
     await sync_to_async(clean_all)
-    nzb_client = get_sabnzb_client()
-    if nzb_client.LOGGED_IN:
-        await nzb_client.pause_all()
-        await nzb_client.purge_all(True)
-        await nzb_client.shutdown()
+    if sabnzbd_client.LOGGED_IN:
+        await gather(
+            sabnzbd_client.pause_all(),
+            sabnzbd_client.purge_all(True),
+            sabnzbd_client.delete_history("all", delete_files=True),
+        )
     proc1 = await create_subprocess_exec(
         "pkill",
         "-9",
@@ -248,6 +251,8 @@ async def restart_notification():
 
 
 async def main():
+    if DATABASE_URL:
+        await DbManager().db_load()
     jdownloader.initiate()
     await gather(
         sync_to_async(clean_all),

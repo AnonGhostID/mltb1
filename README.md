@@ -7,8 +7,8 @@ programming in Python.
 
 ## qBittorrent
 
-- External access to webui, so you can remove files or edit settings
-- Select files from a Torrent before and during download (Requires Base URL) (task option)
+- External access to webui, so you can remove files or edit settings. Then you can sync settings in database with sync button in bsetting
+- Select files from a Torrent before and during download using mltb file selector (Requires Base URL) (task option)
 - Seed torrents to a specific ratio and time (task option)
 - Edit Global Options while the bot is running from bot settings (global option)
 
@@ -23,8 +23,8 @@ programming in Python.
 
 ## Sabnzbd
 
-- External access to web interface, so you can remove files or edit settings
-- Remove files from job before and during download (Requires Base URL) (task option)
+- External access to web interface, so you can remove files or edit settings. Then you can sync settings in database with sync button in bsetting
+- Remove files from job before and during download using mltb file selector (Requires Base URL) (task option)
 - Edit Global Options while the bot is running from bot settings (global option)
 - Servers menu to edit/add/remove usenet servers
 
@@ -317,7 +317,7 @@ quotes, even if it's `Int`, `Bool` or `List`.
 - `LEECH_FILENAME_PREFIX`: Add custom word to leeched file name. `Str`
 - `LEECH_DUMP_CHAT`: ID or USERNAME or PM(private message) to where files would be uploaded. `Int`|`Str`. Add `-100` before channel/superGroup id.
 
-**7. qBittorrent/Aria2c**
+**7. qBittorrent/Aria2c/Sabnzbd**
 
 - `TORRENT_TIMEOUT`: Timeout of dead torrents downloading with qBittorrent and Aria2c in seconds. `Int`
 - `BASE_URL`: Valid BASE URL where the bot is deployed to use torrent web files selection. Format of URL should
@@ -431,7 +431,7 @@ sudo docker stop id
 change it in [docker-compose.yml](https://github.com/anasty17/mirror-leech-telegram-bot/blob/master/docker-compose.yml)
 also.
 
-- Install docker-compose
+- Install docker compose plugin
 
 ```
 sudo apt install docker-compose-plugin
@@ -466,10 +466,6 @@ sudo docker compose start
 ```
 sudo docker compose logs --follow
 ```
-
-- Tutorial video from Tortoolkit repo for docker-compose and checking ports
-
-<p><a href="https://youtu.be/c8_TU1sPK08"> <img src="https://img.shields.io/badge/See%20Video-black?style=for-the-badge&logo=YouTube" width="160""/></a></p>
 
 ------
 
